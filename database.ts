@@ -63,7 +63,6 @@ export class Database<T> extends EventComponent {
      * Trigger database update after a short delay, also trigger database flush after a longer delay
      */
     databaseUpdate = debounce(() => {
-        // console.log("commentator: trigger database update");
         this.trigger('database-update', this.allEntries());
         this.flushChanges();
     }, 100, true);
@@ -72,10 +71,8 @@ export class Database<T> extends EventComponent {
      * Flush changes of memory database to indexedDB buffer
      */
     flushChanges = debounce(async () => {
-        // console.time("commentator: database flush");
         await this.persistMemory();
         this.trigger('database-update', this.allEntries());
-        // console.timeEnd("commentator: database flush");
     }, 1000, true);
 
     public on(name: 'database-update' | 'database-create', callback: (update: DatabaseEntry<T>[]) => void, ctx?: any): EventRef;
@@ -123,9 +120,7 @@ export class Database<T> extends EventComponent {
 
         this.plugin.app.workspace.onLayoutReady(async () => {
             await this.persist.ready(async () => {
-                console.time("commentator: database load")
                 await this.loadDatabase();
-                console.timeEnd("commentator: database load")
 
                 this.trigger('database-update', this.allEntries());
 
@@ -134,7 +129,6 @@ export class Database<T> extends EventComponent {
 
                 this.testtime = Date.now();
 
-                console.time(`commentator: ${timelabel} database`)
                 if (oldVersion !== null && oldVersion < version && !this.isEmpty()) {
                     await this.clearDatabase();
                     await this.rebuildDatabase();
@@ -145,7 +139,6 @@ export class Database<T> extends EventComponent {
                 } else {
                     await this.syncDatabase();
                 }
-                console.timeEnd(`commentator: ${timelabel} database`)
 
                 // Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
                 // 	for instant View updates, but this requires the file to be read into the file cache first
@@ -215,7 +208,6 @@ export class Database<T> extends EventComponent {
                     this.storeKey(file.path, extracted_value, file.stat.mtime, true);
                 }
                 worker.terminate();
-                console.log(`commentator: worker ${i + 1} done (${Date.now() - this.testtime}ms)`);
             }
             worker.postMessage(read_files_chunk);
         }
