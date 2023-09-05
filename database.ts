@@ -211,7 +211,7 @@ export class Database<T> extends EventComponent {
             worker.onmessage = (event: {data: T[]}) => {
                 for (let i = 0; i < files_chunk.length; i++) {
                     const file = files_chunk[i];
-                    const extracted_value = event.data[i];
+                    const extracted_value = this.loadValue(event.data[i]);
                     this.storeKey(file.path, extracted_value, file.stat.mtime, true);
                 }
                 worker.terminate();
@@ -326,6 +326,21 @@ export class Database<T> extends EventComponent {
             name: this.name + `/${this.plugin.app.appId}`,
         });
         localStorage.removeItem(this.plugin.app.appId + '-' + this.name + '-version');
+    }
+
+    /**
+     * Rebuild database from scratch
+     * @remark Useful for fixing incorrectly set version numbers
+     */
+    async reinitializeDatabase() {
+        await this.dropDatabase();
+        this.persist = localforage.createInstance({
+            name: this.name + `/${this.plugin.app.appId}`,
+            driver: localforage.INDEXEDDB,
+            version: this.version,
+            description: this.description,
+        });
+        await this.rebuildDatabase();
     }
 
     /**
