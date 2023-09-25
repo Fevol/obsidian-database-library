@@ -143,19 +143,19 @@ export class Database<T> extends EventComponent {
                 // Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
                 // 	for instant View updates, but this requires the file to be read into the file cache first
                 this.registerEvent(this.plugin.app.vault.on('modify', async (file) => {
-                    if (file instanceof TFile) this.storeKey(file.path, await this.extractValue(file), file.stat.mtime);
+                    if (file instanceof TFile && file.extension === "md") this.storeKey(file.path, await this.extractValue(file), file.stat.mtime);
                 }));
 
                 this.registerEvent(this.plugin.app.vault.on('delete', async (file) => {
-                    if (file instanceof TFile) this.deleteKey(file.path);
+                    if (file instanceof TFile && file.extension === "md") this.deleteKey(file.path);
                 }));
 
                 this.registerEvent(this.plugin.app.vault.on('rename', async (file, oldPath) => {
-                    if (file instanceof TFile) this.renameKey(oldPath, file.path, file.stat.mtime);
+                    if (file instanceof TFile && file.extension === "md") this.renameKey(oldPath, file.path, file.stat.mtime);
                 }));
 
                 this.registerEvent(this.plugin.app.vault.on('create', async (file) => {
-                    if (file instanceof TFile) this.storeKey(file.path, this.defaultValue(), file.stat.mtime);
+                    if (file instanceof TFile && file.extension === "md") this.storeKey(file.path, this.defaultValue(), file.stat.mtime);
                 }));
             });
         });
