@@ -4,6 +4,7 @@ extendPrototypeSet(localforage);
 import { extendPrototype as extendPrototypeGet } from 'localforage-getitems';
 extendPrototypeGet(localforage);
 
+import { type EditorState } from "@codemirror/state";
 import { debounce, type EventRef, Events, type Plugin, TFile } from 'obsidian';
 // @ts-expect-error (if somebody knows how to get rid of this TS error, please do share, allowSyntheticDefaultImports does not work)
 import Indexer from './indexer.worker';
@@ -102,7 +103,7 @@ export class Database<T> extends EventComponent {
         public version: number,
         public description: string,
         private defaultValue: () => T,
-        private extractValue: (file: TFile) => Promise<T>,
+        private extractValue: (file: TFile, state?: EditorState) => Promise<T>,
         public workers: number = 2,
         private loadValue: (data: T) => T = (data: T) => data,
     ) {
@@ -124,10 +125,8 @@ export class Database<T> extends EventComponent {
 
                 this.trigger('database-update', this.allEntries());
 
-                const timelabel = oldVersion !== null && oldVersion < version ? "migrating" :
-                                                                    this.isEmpty() ? "initializing" : "syncing";
-
-                this.testtime = Date.now();
+                const operation_label = oldVersion !== null && oldVersion < version ? "migrating" :
+                    this.isEmpty() ? "initializing" : "syncing";
 
                 if (oldVersion !== null && oldVersion < version && !this.isEmpty()) {
                     await this.clearDatabase();
@@ -143,7 +142,11 @@ export class Database<T> extends EventComponent {
                 // Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
                 // 	for instant View updates, but this requires the file to be read into the file cache first
                 this.registerEvent(this.plugin.app.vault.on('modify', async (file) => {
-                    if (file instanceof TFile && file.extension === "md") this.storeKey(file.path, await this.extractValue(file), file.stat.mtime);
+                    if (file instanceof TFile && file.extension === "md") {
+                        const current_editor = this.plugin.app.workspace.activeEditor;
+                        const state = (current_editor && current_editor.file?.path === file.path && current_editor.editor) ? current_editor.editor.cm.state : undefined;
+                        this.storeKey(file.path, await this.extractValue(file, state), file.stat.mtime);
+                    }
                 }));
 
                 this.registerEvent(this.plugin.app.vault.on('delete', async (file) => {
