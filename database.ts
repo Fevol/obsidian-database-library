@@ -336,6 +336,7 @@ export class Database<T> extends EventComponent {
             description: this.description,
         });
         await this.rebuildDatabase();
+        this.trigger('database-update', this.allEntries());
     }
 
     /**
