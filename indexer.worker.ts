@@ -1,10 +1,6 @@
-// Modify this file to fit your use-case
-import { getNodesInText } from '../editor/base/edit-util';
+// Export a indexWorker function in @root/index-worker.ts in order to define the worker
+import { indexWorker } from "index-worker";
 
 self.onmessage = async (event) => {
-	const files = await Promise.all(event.data.map(async (file: string) => {
-		return getNodesInText(file).nodes;
-	}));
-
-	self.postMessage(files);
+	self.postMessage(await indexWorker(event.data));
 }
