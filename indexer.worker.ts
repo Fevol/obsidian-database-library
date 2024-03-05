@@ -2,5 +2,5 @@
 import { indexWorker } from "index-worker";
 
 self.onmessage = async (event) => {
-	self.postMessage(await indexWorker(event.data));
+	self.postMessage(await indexWorker(event.data.files, event.data.settings));
 }

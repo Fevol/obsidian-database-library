@@ -51,8 +51,6 @@ export class Database<T> extends EventComponent {
      */
     persist: typeof localforage;
 
-    private testtime: number = 0;
-
     /**
      * List of keys that have been deleted from the in-memory cache, but not yet from indexedDB
      * @private
@@ -95,6 +93,7 @@ export class Database<T> extends EventComponent {
      * @param extractValue Provide new values for database on file modification
      * @param workers Number of workers to use for parsing files
      * @param loadValue On loading value from indexedDB, run this function on the value (useful for re-adding prototypes)
+     * @param getSettings Get the current settings of the plugin
      */
     constructor(
         public plugin: Plugin,
@@ -106,6 +105,7 @@ export class Database<T> extends EventComponent {
         private extractValue: (file: TFile, state?: EditorState) => Promise<T>,
         public workers: number = 2,
         private loadValue: (data: T) => T = (data: T) => data,
+        private getSettings: () => any = () => (this.plugin as any).settings,
     ) {
         super();
 
@@ -124,9 +124,6 @@ export class Database<T> extends EventComponent {
                 await this.loadDatabase();
 
                 this.trigger('database-update', this.allEntries());
-
-                const operation_label = oldVersion !== null && oldVersion < version ? "migrating" :
-                    this.isEmpty() ? "initializing" : "syncing";
 
                 if (oldVersion !== null && oldVersion < version && !this.isEmpty()) {
                     await this.clearDatabase();
@@ -212,7 +209,7 @@ export class Database<T> extends EventComponent {
                 }
                 worker.terminate();
             }
-            worker.postMessage(read_files_chunk);
+            worker.postMessage({files: read_files_chunk, settings: this.getSettings()});
         }
 
         this.plugin.app.saveLocalStorage(this.name + '-version', this.version.toString());
