@@ -51,6 +51,8 @@ export class Database<T> extends EventComponent {
      */
     persist: typeof localforage;
 
+    old_version: number | null = null;
+
     /**
      * List of keys that have been deleted from the in-memory cache, but not yet from indexedDB
      * @private
@@ -94,6 +96,7 @@ export class Database<T> extends EventComponent {
      * @param workers Number of workers to use for parsing files
      * @param loadValue On loading value from indexedDB, run this function on the value (useful for re-adding prototypes)
      * @param getSettings Get the current settings of the plugin
+     * @param startDatabase Determines whether the database should start immediately on construction (otherwise call `startDatabase()`)
      */
     constructor(
         public plugin: Plugin,
@@ -106,11 +109,12 @@ export class Database<T> extends EventComponent {
         public workers: number = 2,
         private loadValue: (data: T) => T = (data: T) => data,
         private getSettings: () => any = () => (this.plugin as any).settings,
+        startDatabase = true
     ) {
         super();
 
         // localforage does not offer a method for accessing the database version, so we store it separately
-        const oldVersion = parseInt(this.plugin.app.loadLocalStorage(name + '-version')) || null;
+        this.old_version = parseInt(this.plugin.app.loadLocalStorage(name + '-version')) || null;
 
         this.persist = localforage.createInstance({
             name: this.name + `/${this.plugin.app.appId}`,
@@ -119,22 +123,25 @@ export class Database<T> extends EventComponent {
             version,
         });
 
+        if (startDatabase) this.startDatabase();
+    }
+
+    async startDatabase() {
         this.plugin.app.workspace.onLayoutReady(async () => {
             await this.persist.ready(async () => {
-                await this.loadDatabase();
-
-                this.trigger('database-update', this.allEntries());
-
-                if (oldVersion !== null && oldVersion < version && !this.isEmpty()) {
+                if (this.old_version === null) {
+                    await this.rebuildDatabase();
+                    this.trigger('database-create');
+                } else if (this.old_version < this.version) {
                     await this.clearDatabase();
                     await this.rebuildDatabase();
                     this.trigger('database-migrate');
-                } else if (this.isEmpty()) {
-                    await this.rebuildDatabase();
-                    this.trigger('database-create');
                 } else {
+                    await this.loadDatabase();
                     await this.syncDatabase();
                 }
+                this.trigger('database-update', this.allEntries());
+
 
                 // Alternatives: use 'this.editorExtensions.push(EditorView.updateListener.of(async (update) => {'
                 // 	for instant View updates, but this requires the file to be read into the file cache first
@@ -160,6 +167,8 @@ export class Database<T> extends EventComponent {
             });
         });
     }
+
+
 
     /**
      * Load database from indexedDB
