@@ -76,10 +76,10 @@ export class Database<T> extends EventComponent {
         this.trigger('database-update', this.allEntries());
     }, 1000, true);
 
-    public on(name: 'database-update' | 'database-create', callback: (update: DatabaseEntry<T>[]) => void, ctx?: any): EventRef;
-    public on(name: 'database-migrate', callback: () => void, ctx?: any): EventRef;
+    public on(name: 'database-update' | 'database-create', callback: (update: DatabaseEntry<T>[]) => void, ctx?: unknown): EventRef;
+    public on(name: 'database-migrate', callback: () => void, ctx?: unknown): EventRef;
 
-    on(name: string, callback: (...args: any[]) => void, ctx?: any): EventRef {
+    on(name: string, callback: (...args: any[]) => void, ctx?: unknown): EventRef {
         return super.on(name, callback, ctx);
     }
 
@@ -108,7 +108,7 @@ export class Database<T> extends EventComponent {
         private extractValue: (file: TFile, state?: EditorState) => Promise<T>,
         public workers: number = 2,
         private loadValue: (data: T) => T = (data: T) => data,
-        private getSettings: () => any = () => (this.plugin as any).settings,
+        private getSettings: () => unknown = () => (this.plugin as unknown as {settings: object}).settings,
         startDatabase = true
     ) {
         super();
