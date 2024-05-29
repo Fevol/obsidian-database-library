@@ -4,4 +4,4 @@ export {
 	Database,
 	type DatabaseEntry,
 	type DatabaseItem,
-}
+};
