@@ -29,7 +29,6 @@ export class EventComponent extends Events {
 	}
 
 	registerEvent(event: EventRef) {
-		// @ts-ignore (Eventref contains reference to the Events object it was attached to)
 		this.register(() => event.e.offref(event));
 	}
 }
